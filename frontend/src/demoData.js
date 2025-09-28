@@ -6,6 +6,8 @@ const ngos = [
     contact: "contact@fastnuc.edu.pk",
     category: "Education",
     location: "Karachi, Pakistan",
+    latitude: 24.8607,
+    longitude: 67.0011,
     logo_url: "/assets/fastnuc_logo.png",  // Place the logo image inside public/assets/
     verified: true
   },
