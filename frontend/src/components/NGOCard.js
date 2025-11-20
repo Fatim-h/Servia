@@ -1,9 +1,10 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import './NGOCard.css'; // optional styling file
 
 const NGOCard = ({ ngo }) => {
   return (
-    <div className="ngo-card">
+    <div className="ngo-card" >
       {ngo.logo_url && (
         <img
           src={ngo.logo_url}
@@ -11,7 +12,11 @@ const NGOCard = ({ ngo }) => {
           className="ngo-logo"
         />
       )}
-      <h2>{ngo.name}</h2>
+      <h2>
+        <Link to={`/ngo/${ngo.id}`} state={{ ngo }}>
+          {ngo.name}
+        </Link>
+      </h2>
       <p><strong>Mission:</strong> {ngo.mission}</p>
       <p><strong>Category:</strong> {ngo.category}</p>
       <p><strong>Contact:</strong> {ngo.contact}</p>
