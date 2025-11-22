@@ -1,0 +1,50 @@
+/* src/pages/CausePage.css */
+.cause-page-container {
+  padding: 2rem;
+}
+
+.cause-header {
+  display: flex;
+  gap: 2rem;
+  align-items: flex-start;
+  margin-bottom: 2rem;
+}
+
+.cause-logo {
+  width: 200px;
+  height: 200px;
+  object-fit: cover;
+  border-radius: 10px;
+  border: 1px solid #ddd;
+}
+
+.cause-info h1 {
+  margin: 0 0 0.5rem 0;
+}
+
+.cause-type {
+  font-weight: bold;
+  color: #555;
+  margin-bottom: 1rem;
+}
+
+.cause-description {
+  font-size: 1rem;
+  color: #333;
+}
+
+.event-details {
+  margin-bottom: 2rem;
+  padding: 1rem;
+  border: 1px solid #eee;
+  border-radius: 8px;
+  background: #f9f9f9;
+}
+
+.event-details h3 {
+  margin-top: 0;
+}
+
+.cause-map-section {
+  margin-top: 2rem;
+}

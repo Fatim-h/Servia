@@ -1,28 +1,41 @@
-import React, { useState } from 'react';
-import NGOCard from '../components/NGOCard';
-import NGOMap from '../components/map';
-import ngos from '../demoData';
+// src/pages/HomePage.js
+import React, { useState, useEffect } from 'react';
+import CauseCard from '../components/CauseCard';
+import CauseMap from '../components/Causemap';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { getAllCauses } from '../services/causeservice';
 
 const HomePage = () => {
-  const [view, setView] = useState('gallery');       // gallery or map
-  const [isLoggedIn, setIsLoggedIn] = useState(false); // login state
+  const [view, setView] = useState('gallery'); // gallery or map
+  const [causes, setCauses] = useState([]);
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();  // using global login state
+
+  // Fetch causes from backend
+  useEffect(() => {
+    const fetchCauses = async () => {
+      const data = await getAllCauses();
+      setCauses(data);
+    };
+    fetchCauses();
+  }, []);
 
   const toggleView = () => {
-    setView((prev) => (prev === 'gallery' ? 'map' : 'gallery'));
+    setView(prev => (prev === 'gallery' ? 'map' : 'gallery'));
   };
 
-  const handleLogin = () => {
-    setIsLoggedIn(true);
+  const goToLogin = () => {
+    navigate("/login");
   };
 
   const handleLogout = () => {
-    setIsLoggedIn(false);
+    logout();
   };
 
   return (
     <div>
-
-      {/* HEADER BAR */}
+      {/* HEADER */}
       <header style={{
         display: 'flex',
         justifyContent: 'space-between',
@@ -34,36 +47,30 @@ const HomePage = () => {
         top: 0,
         zIndex: 1000
       }}>
-        
-        {/* Left side: Switch View Button */}
-        <button 
-          onClick={toggleView}
-          style={{
-            padding: '0.5rem 1rem',
-            cursor: 'pointer'
-          }}
-        >
+        <button onClick={toggleView} style={{ padding: '0.5rem 1rem', cursor: 'pointer' }}>
           Switch to {view === 'gallery' ? 'Map' : 'Gallery'}
         </button>
 
-        {/* Right side: Conditional Login / Logout */}
-        <div style={{ display: 'flex', gap: '1rem' }}>
-          {!isLoggedIn && (
-            <button 
-              onClick={handleLogin} 
-              style={{ padding: '0.5rem 1rem', cursor: 'pointer' }}
-            >
+        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+          {!user && (
+            <button onClick={goToLogin} style={{ padding: '0.5rem 1rem', cursor: 'pointer' }}>
               Login
             </button>
           )}
 
-          {isLoggedIn && (
-            <button 
-              onClick={handleLogout} 
-              style={{ padding: '0.5rem 1rem', cursor: 'pointer' }}
-            >
-              Logout
-            </button>
+          {user && (
+            <>
+              <span>Welcome, {user.name}</span>
+              <button 
+                onClick={() => navigate(`/${user.role}-dashboard`)}
+                style={{ padding: '0.5rem 1rem', cursor: 'pointer' }}
+              >
+                Dashboard
+              </button>
+              <button onClick={handleLogout} style={{ padding: '0.5rem 1rem', cursor: 'pointer' }}>
+                Logout
+              </button>
+            </>
           )}
         </div>
       </header>
@@ -71,16 +78,15 @@ const HomePage = () => {
       {/* CONTENT */}
       {view === 'gallery' ? (
         <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', marginTop: '2rem' }}>
-          {ngos.map(ngo => (
-            <NGOCard key={ngo.id} ngo={ngo} />
+          {causes.map(cause => (
+            <CauseCard key={cause.id} cause={cause} />
           ))}
         </div>
       ) : (
         <div style={{ marginTop: '2rem' }}>
-          <NGOMap ngos={ngos} />
+          <CauseMap causes={causes} />
         </div>
       )}
-
     </div>
   );
 };
