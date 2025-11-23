@@ -42,8 +42,35 @@ const SignUp = () => {
     setSuccess("");
 
     try {
-      const payload = { ...formData, role };
-      if (role !== "user") payload.owner_user_id = ownerUserId;
+      // Build payload depending on role
+      const payload = { role };
+
+      if (role === "user") {
+        payload.name = formData.name;
+        payload.email = formData.email;
+        payload.password = formData.password;
+        payload.age = formData.age; // include age for users
+      } else {
+        // NGO or Event
+        payload.name = formData.name;
+        payload.email = formData.email;
+        payload.password = formData.password;
+        payload.owner_user_id = ownerUserId; // must be a verified user
+
+        if (role === "ngo") {
+          payload.description = formData.description;
+          payload.logo = formData.logo;
+          payload.year_est = formData.year_est;
+        }
+
+        if (role === "event") {
+          payload.description = formData.description;
+          payload.capacity = formData.capacity;
+          payload.date = formData.date;
+          payload.time = formData.time;
+          payload.ngo_id = formData.ngo_id;
+        }
+      }
 
       const res = await axios.post(`${API_URL}/auth/register`, payload);
       setSuccess(res.data.message);
@@ -133,17 +160,15 @@ const SignUp = () => {
 
         {/* NGO / EVENT */}
         {role !== "user" && (
-          <>
-            <label>
-              Owner User ID (must be verified):
-              <input
-                type="number"
-                value={ownerUserId}
-                onChange={(e) => setOwnerUserId(e.target.value)}
-                required
-              />
-            </label>
-          </>
+          <label>
+            Owner User ID (must be verified):
+            <input
+              type="number"
+              value={ownerUserId}
+              onChange={(e) => setOwnerUserId(e.target.value)}
+              required
+            />
+          </label>
         )}
 
         {/* NGO FIELDS */}
