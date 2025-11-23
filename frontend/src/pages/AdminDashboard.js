@@ -1,129 +1,116 @@
-import React, { useState, useEffect } from "react";
-import AdminService from "../services/AdminService";
-import UserCard from "../components/UserCard";
-import CauseCard from "../components/CauseCard";
-import AdminTabs from "../components/AdminTabs";
-import DetailsModal from "../components/DetailsModal";
-import ConfirmDeleteModal from "../components/ConfirmDeleteModal";
-import "./AdminDashboard.css";
+import React, { useEffect, useState } from 'react';
+import api from '../services/api';
+import { useAuth } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
+import './AdminDashboard.css';
 
-export default function AdminDashboard() {
-    const [activeTab, setActiveTab] = useState("unverifiedUsers");
+const AdminDashboard = () => {
+  const { auth } = useAuth();
+  const navigate = useNavigate();
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-    const [users, setUsers] = useState([]);
-    const [causes, setCauses] = useState([]);
+  // Fetch users
+  const fetchUsers = async () => {
+    try {
+      const res = await api.get('/api/admin/users', {
+        headers: { Authorization: `Bearer ${auth.token}` }
+      });
+      setUsers(res.data);
+      setLoading(false);
+    } catch (err) {
+      console.error(err);
+      alert('Failed to load users');
+    }
+  };
 
-    const [selectedItem, setSelectedItem] = useState(null);
-    const [deleteTarget, setDeleteTarget] = useState(null);
+  useEffect(() => {
+    if (!auth || auth.role !== 'admin') {
+      navigate('/login');
+    } else {
+      fetchUsers();
+    }
+  }, [auth]);
 
-    const token = localStorage.getItem("token");
+ // Verify/unverify user
+   const toggleVerify = async (authId, verified) => {
+     try {
+       const route = verified 
+         ? `/api/admin/unverify/${authId}` 
+         : `/api/admin/verify/${authId}`;
+   
+       await api.patch(route, {}, {
+         headers: { Authorization: `Bearer ${auth.token}` }
+       });
+   
+       fetchUsers(); // refresh list
+     } catch (err) {
+       console.error(err);
+       alert('Failed to update user verification');
+     }
+   };
+   
 
-    useEffect(() => {
-        loadData();
-    }, []);
+  // Delete user
+  const handleDelete = async (authId) => {
+    if (!window.confirm('Are you sure you want to delete this user?')) return;
 
-    const loadData = async () => {
-        try {
-            const u = await AdminService.getUsers(token);
-            const c = await AdminService.getCauses(token);
+    try {
+      await api.delete(`/api/admin/delete/user/${authId}`, {
+        headers: { Authorization: `Bearer ${auth.token}` }
+      });
+      fetchUsers();
+    } catch (err) {
+      console.error(err);
+      alert('Failed to delete user');
+    }
+  };
 
-            // These come from Axios → actual data is in u.data.data
-            setUsers(u.data.data || []);
-            setCauses(c.data.data || []);
-        } catch (e) {
-            console.error("Admin load error →", e);
-        }
-    };
+  const handleView = (authId) => {
+    navigate(`/user/${authId}`);
+  };
 
-    // ADMIN ACTIONS
-    const handleVerify = async (auth_id) => {
-        await AdminService.verify(auth_id, token);
-        loadData();
-    };
+  if (loading) return <p>Loading...</p>;
 
-    const handleUnverify = async (auth_id) => {
-        await AdminService.unverify(auth_id, token);
-        loadData();
-    };
+  return (
+    <div style={{ padding: '2rem' }}>
+      <h1>Admin Dashboard</h1>
 
-    const handleDeleteUser = async (userId) => {
-        await AdminService.deleteUser(userId, token);
-        setDeleteTarget(null);
-        loadData();
-    };
+      <table border="1" cellPadding="10" style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Verified</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
 
-    const handleDeleteCause = async (causeId) => {
-        await AdminService.deleteCause(causeId, token);
-        setDeleteTarget(null);
-        loadData();
-    };
+        <tbody>
+          {users.map(u => (
+            <tr key={u.auth_id}>
+              <td>{u.name}</td>
+              <td>{u.verified ? 'Yes' : 'No'}</td>
 
-    // FILTERS FOR TABS
-    const filtered = {
-        unverifiedUsers: users.filter(u => !u.verified),
-        verifiedUsers: users.filter(u => u.verified),
+              <td>
+                <button onClick={() => toggleVerify(u.auth_id, u.verified)}>
+                  {u.verified ? 'Unverify' : 'Verify'}
+                </button>
 
-        unverifiedCauses: causes.filter(c => !c.verified),
-        verifiedCauses: causes.filter(c => c.verified),
+                <button onClick={() => handleView(u.auth_id)}>
+                  View
+                </button>
 
-        allUsers: users,
-        allCauses: causes
-    };
+                <button onClick={() => handleDelete(u.auth_id)}>
+                  Delete
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
 
-    const list = filtered[activeTab] || [];
+      </table>
+    </div>
+  );
+};
 
-    return (
-        <div className="admin-container">
-            <h1>Admin Dashboard</h1>
-
-            <AdminTabs active={activeTab} setActive={setActiveTab} />
-
-            <div className="cards-container">
-                {list.map(item => {
-                    // It's a user
-                    if (item.user_id) {
-                        return (
-                            <UserCard
-                                key={item.user_id}
-                                user={item}
-                                onVerify={() => handleVerify(item.auth_id)}
-                                onUnverify={() => handleUnverify(item.auth_id)}
-                                onDelete={() => setDeleteTarget({ type: "user", id: item.user_id })}
-                                onView={() => setSelectedItem(item)}
-                            />
-                        );
-                    }
-
-                    // It's a cause
-                    if (item.cause_id) {
-                        return (
-                            <CauseCard
-                                key={item.cause_id}
-                                cause={item}
-                                onClick={() => setSelectedItem(item)} // View cause details
-                            />
-                        );
-                    }
-
-                    return null;
-                })}
-            </div>
-
-            {selectedItem && (
-                <DetailsModal item={selectedItem} onClose={() => setSelectedItem(null)} />
-            )}
-
-            {deleteTarget && (
-                <ConfirmDeleteModal
-                    target={deleteTarget}
-                    onClose={() => setDeleteTarget(null)}
-                    onConfirm={() =>
-                        deleteTarget.type === "user"
-                            ? handleDeleteUser(deleteTarget.id)
-                            : handleDeleteCause(deleteTarget.id)
-                    }
-                />
-            )}
-        </div>
-    );
-}
+export default AdminDashboard;

@@ -1,46 +1,90 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import './SignUp.css';
+// src/pages/SignUp.js
+import React, { useState } from "react";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
+import "./SignUp.css";
 
-const API_URL = 'http://localhost:5000/api';
+const API_URL = "http://localhost:5000/api";
 
 const SignUp = () => {
   const navigate = useNavigate();
+  const [role, setRole] = useState("user"); // toggle: user / ngo / event
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: '',
-    type: 'user', // user or ngo
+    name: "",
+    email: "",
+    password: "",
+    age: "",
+    description: "",
+    if_online: false,
+    logo: "",
+    year_est: "",
+    capacity: "",
+    date: "",
+    time: "",
+    ngo_id: ""
   });
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+
+  const [ownerUserId, setOwnerUserId] = useState(""); // for NGO/Event
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value, type, checked } = e.target;
+    setFormData({
+      ...formData,
+      [name]: type === "checkbox" ? checked : value
+    });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
-    setSuccess('');
+    setError("");
+    setSuccess("");
 
     try {
-      const res = await axios.post(`${API_URL}/auth/register`, formData);
-      setSuccess('Account created! Wait for admin verification.');
-      setTimeout(() => navigate('/login'), 2000); // redirect to login
+      const payload = { ...formData, role };
+      if (role !== "user") payload.owner_user_id = ownerUserId;
+
+      const res = await axios.post(`${API_URL}/auth/register`, payload);
+      setSuccess(res.data.message);
+      setTimeout(() => navigate("/login"), 2000);
     } catch (err) {
       console.error(err);
-      setError(err.response?.data?.message || 'Registration failed');
+      setError(err.response?.data?.error || "Registration failed");
     }
   };
 
   return (
     <div className="signup-container">
       <h2>Sign Up</h2>
+
+      {/* Role Toggle */}
+      <div className="role-toggle">
+        <button
+          className={role === "user" ? "active" : ""}
+          onClick={() => setRole("user")}
+        >
+          User
+        </button>
+        <button
+          className={role === "ngo" ? "active" : ""}
+          onClick={() => setRole("ngo")}
+        >
+          NGO
+        </button>
+        <button
+          className={role === "event" ? "active" : ""}
+          onClick={() => setRole("event")}
+        >
+          Event
+        </button>
+      </div>
+
       {error && <p className="error">{error}</p>}
       {success && <p className="success">{success}</p>}
+
       <form onSubmit={handleSubmit}>
+        {/* COMMON FIELDS */}
         <label>
           Name:
           <input
@@ -74,13 +118,121 @@ const SignUp = () => {
           />
         </label>
 
-        <label>
-          Account Type:
-          <select name="type" value={formData.type} onChange={handleChange}>
-            <option value="user">User</option>
-            <option value="ngo">NGO</option>
-          </select>
-        </label>
+        {/* USER ONLY */}
+        {role === "user" && (
+          <label>
+            Age:
+            <input
+              type="number"
+              name="age"
+              value={formData.age}
+              onChange={handleChange}
+            />
+          </label>
+        )}
+
+        {/* NGO / EVENT */}
+        {role !== "user" && (
+          <>
+            <label>
+              Owner User ID (must be verified):
+              <input
+                type="number"
+                value={ownerUserId}
+                onChange={(e) => setOwnerUserId(e.target.value)}
+                required
+              />
+            </label>
+          </>
+        )}
+
+        {/* NGO FIELDS */}
+        {role === "ngo" && (
+          <>
+            <label>
+              Description:
+              <textarea
+                name="description"
+                value={formData.description}
+                onChange={handleChange}
+              />
+            </label>
+
+            <label>
+              Logo URL:
+              <input
+                type="text"
+                name="logo"
+                value={formData.logo}
+                onChange={handleChange}
+              />
+            </label>
+
+            <label>
+              Year Established:
+              <input
+                type="number"
+                name="year_est"
+                value={formData.year_est}
+                onChange={handleChange}
+              />
+            </label>
+          </>
+        )}
+
+        {/* EVENT FIELDS */}
+        {role === "event" && (
+          <>
+            <label>
+              Description:
+              <textarea
+                name="description"
+                value={formData.description}
+                onChange={handleChange}
+              />
+            </label>
+
+            <label>
+              Capacity:
+              <input
+                type="number"
+                name="capacity"
+                value={formData.capacity}
+                onChange={handleChange}
+              />
+            </label>
+
+            <label>
+              Date:
+              <input
+                type="date"
+                name="date"
+                value={formData.date}
+                onChange={handleChange}
+              />
+            </label>
+
+            <label>
+              Time:
+              <input
+                type="time"
+                name="time"
+                value={formData.time}
+                onChange={handleChange}
+              />
+            </label>
+
+            <label>
+              NGO ID:
+              <input
+                type="number"
+                name="ngo_id"
+                value={formData.ngo_id}
+                onChange={handleChange}
+              />
+            </label>
+          </>
+        )}
 
         <button type="submit">Sign Up</button>
       </form>

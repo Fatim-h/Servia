@@ -1,43 +1,51 @@
 # server.py
+import os
 from flask import Flask
-from backend import db, jwt  # import the shared instances
-from flask_jwt_extended import JWTManager
 from flask_cors import CORS
 from flask_migrate import Migrate
 from dotenv import load_dotenv
-import os
-import click
-from flask.cli import with_appcontext
 
-migrate = Migrate()  # only create Migrate here
+from backend import db, jwt  # shared instances
+from backend.routes import main
 
 load_dotenv()
 
-DATABASE_URL = os.getenv("DATABASE_URL")
-print("DB URL:", DATABASE_URL)
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///app.db")
+JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "super-secret-key")
+
+migrate = Migrate()  # Create migrate instance
 
 def create_app():
     app = Flask(__name__)
 
-    # Configuration
-    app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv(
-        "DATABASE_URL", "sqlite:///app.db"
-    )
+    # --------------------
+    # REQUIRED CONFIG
+    # --------------------
+    app.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_URL
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-    app.config["JWT_SECRET_KEY"] = os.getenv("JWT_SECRET_KEY", "super-secret-key")
+    app.config["JWT_SECRET_KEY"] = JWT_SECRET_KEY
 
-    # Initialize extensions
+    # --------------------
+    # INIT EXTENSIONS
+    # --------------------
     db.init_app(app)
     jwt.init_app(app)
     migrate.init_app(app, db)
-    CORS(app)
 
-    # Import models and routes
-    from backend.routes import main
+    # --------------------
+    # CORS
+    # --------------------
+    CORS(app, resources={r"/api/*": {"origins": "http://localhost:5001"}})
+
+    # --------------------
+    # BLUEPRINTS
+    # --------------------
     app.register_blueprint(main)
 
-    return app  # <-- return app here
+    return app
 
+
+# ----------------- Run Server -----------------
 if __name__ == "__main__":
     app = create_app()
     app.run(host="0.0.0.0", port=5000, debug=True)

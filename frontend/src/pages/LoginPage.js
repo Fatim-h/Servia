@@ -1,66 +1,42 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import './LoginPage.css'; // import the new CSS file
 
 const LoginPage = () => {
   const [name, setName] = useState('');
-  const [id, setId] = useState('');
-  const [role, setRole] = useState('user');
-
+  const [password, setPassword] = useState('');
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-
-    login({
-      name,
-      id,
-      role,
-    });
-
-    navigate('/');
+    const success = await login({ name, password });
+    if (success) {
+      navigate('/'); // redirect after successful login
+    }
   };
 
   return (
-    <div style={{ padding: "2rem" }}>
+    <div className="login-container">
       <h1>Login</h1>
-
-      <form onSubmit={handleSubmit} style={{ maxWidth: "400px" }}>
-        
+      <form onSubmit={handleSubmit} className="login-form">
         <input 
           type="text" 
           placeholder="Name"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          style={{ width: "100%", marginBottom: "1rem" }}
         />
-
         <input 
-          type="password"
-          placeholder="ID / Password"
-          value={id}
-          onChange={(e) => setId(e.target.value)}
-          style={{ width: "100%", marginBottom: "1rem" }}
+          type="password" 
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
         />
-
-        <select
-          value={role}
-          onChange={(e) => setRole(e.target.value)}
-          style={{ width: "100%", marginBottom: "1rem" }}
-        >
-          <option value="admin">Admin</option>
-          <option value="user">User</option>
-          <option value="cause">Cause</option>
-        </select>
-
-        <button type="submit" style={{ width: "100%", padding: "0.5rem" }}>
-          Login
-        </button>
+        <button type="submit">Login</button>
       </form>
-
-      <p>
-          Don't have an account? <a href="/signup">Sign up here</a>
+      <p className="signup-text">
+        Don't have an account? <a href="/signup">Sign up here</a>
       </p>
     </div>
   );
