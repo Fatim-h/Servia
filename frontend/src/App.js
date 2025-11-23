@@ -2,6 +2,7 @@ import React from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import HomePage from "./pages/HomePage";
 import CausePage from "./pages/CausePage";
+import UserPage from "./pages/UserPage";
 import LoginPage from './pages/LoginPage';
 import Header from './components/Header';
 import AdminDashboard from './pages/AdminDashboard';
@@ -17,6 +18,8 @@ export default function App() {
         <Route path="/signup" element={<SignUp />} />
         <Route path="/admindashboard" element={<AdminDashboard />} />
         <Route path="/userdashboard" element={<UserDashboard />} />
+        <Route path="/admin/user/:userId" element={<UserPage />} />
+        <Route path="/cause/:causeId" element={<CausePage />} />
       </Routes>
     </BrowserRouter>
   );

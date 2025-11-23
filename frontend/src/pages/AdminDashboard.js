@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import api from '../services/api';
 import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import './AdminDashboard.css';
 
 const AdminDashboard = () => {
@@ -44,11 +45,12 @@ const AdminDashboard = () => {
   };
 
   // Toggle user verification
-  const toggleVerifyUser = async (id, verified) => {
-    if (!id) return;
+  const toggleVerifyUser = async (auth_id, verified) => {
+    if (!auth_id) return;
     try {
-      await api.patch(`/api/admin/verify/${id}`, {});
-      fetchUsers();
+      await api.patch(`/api/admin/${verified ? 'unverify' : 'verify'}/${auth_id}`);
+      await fetchUsers();
+      await fetchCauses(); // Also update causes of this user
     } catch (err) {
       console.error(err);
       alert('Failed to update user verification');
@@ -56,12 +58,13 @@ const AdminDashboard = () => {
   };
 
   // Delete a user
-  const handleDeleteUser = async (id) => {
-    if (!id) return;
+  const handleDeleteUser = async (user_id) => {
+    if (!user_id) return;
     if (!window.confirm('Are you sure you want to delete this user?')) return;
     try {
-      await api.delete(`/api/admin/delete/user/${id}`);
-      fetchUsers();
+      await api.delete(`/api/admin/delete/user/${user_id}`);
+      await fetchUsers();
+      await fetchCauses();
     } catch (err) {
       console.error(err);
       alert('Failed to delete user');
@@ -69,11 +72,11 @@ const AdminDashboard = () => {
   };
 
   // Toggle cause verification
-  const toggleVerifyCause = async (id, verified) => {
-    if (!id) return;
+  const toggleVerifyCause = async (auth_id, verified) => {
+    if (!auth_id) return;
     try {
-      await api.patch(`/api/admin/verify/cause/${id}`, {});
-      fetchCauses();
+      await api.patch(`/api/admin/${verified ? 'unverify' : 'verify'}/${auth_id}`);
+      await fetchCauses();
     } catch (err) {
       console.error(err);
       alert('Failed to update cause verification');
@@ -81,12 +84,12 @@ const AdminDashboard = () => {
   };
 
   // Delete a cause
-  const handleDeleteCause = async (id) => {
-    if (!id) return;
+  const handleDeleteCause = async (cause_id) => {
+    if (!cause_id) return;
     if (!window.confirm('Are you sure you want to delete this cause?')) return;
     try {
-      await api.delete(`/api/admin/delete/cause/${id}`);
-      fetchCauses();
+      await api.delete(`/api/admin/delete/cause/${cause_id}`);
+      await fetchCauses();
     } catch (err) {
       console.error(err);
       alert('Failed to delete cause');
@@ -125,17 +128,19 @@ const AdminDashboard = () => {
         </thead>
         <tbody>
           {users.map((u, index) => (
-            <tr key={u.id || `user-${index}`}>
-              <td>{u.name}</td>
+            <tr key={u.auth_id || `user-${index}`}>
+              <td>
+                <Link to={`/admin/user/${u.user_id}`}>{u.name}</Link>
+              </td>
               <td>{u.verified ? 'Yes' : 'No'}</td>
               <td>
                 <button
                   className="btn"
-                  onClick={() => toggleVerifyUser(u.id, u.verified)}
+                  onClick={() => toggleVerifyUser(u.auth_id, u.verified)}
                 >
                   {u.verified ? 'Unverify' : 'Verify'}
                 </button>
-                <button className="btn btn-delete" onClick={() => handleDeleteUser(u.id)}>Delete</button>
+                <button className="btn btn-delete" onClick={() => handleDeleteUser(u.user_id)}>Delete</button>
               </td>
             </tr>
           ))}
@@ -147,24 +152,26 @@ const AdminDashboard = () => {
       <table className="admin-table">
         <thead>
           <tr>
-            <th>Title</th>
+            <th>Name</th>
             <th>Verified</th>
             <th>Actions</th>
           </tr>
         </thead>
         <tbody>
           {causes.map((c, index) => (
-            <tr key={c.id || `cause-${index}`}>
-              <td>{c.title}</td>
+            <tr key={c.cause_id || `cause-${index}`}>
+              <td>
+                <Link to={`/cause/${c.cause_id}`}>{c.name}</Link>
+              </td>
               <td>{c.verified ? 'Yes' : 'No'}</td>
               <td>
                 <button
                   className="btn"
-                  onClick={() => toggleVerifyCause(c.id, c.verified)}
+                  onClick={() => toggleVerifyCause(c.auth_id, c.verified)}
                 >
                   {c.verified ? 'Unverify' : 'Verify'}
                 </button>
-                <button className="btn btn-delete" onClick={() => handleDeleteCause(c.id)}>Delete</button>
+                <button className="btn btn-delete" onClick={() => handleDeleteCause(c.cause_id)}>Delete</button>
               </td>
             </tr>
           ))}

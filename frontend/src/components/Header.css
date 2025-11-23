@@ -2,18 +2,63 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px 20px;
+  padding: 12px 24px;
   background-color: #0077ff;
   color: white;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 
-.header .logo {
+.header .logo a {
   font-weight: bold;
-  font-size: 20px;
-}
-
-.header nav a {
-  margin-left: 15px;
+  font-size: 24px;
   color: white;
   text-decoration: none;
+}
+
+nav {
+  display: flex;
+  align-items: center;
+}
+
+.welcome-text {
+  margin-right: 15px;
+  font-size: 16px;
+}
+
+.header-btn {
+  margin-left: 10px;
+  padding: 8px 16px;
+  border-radius: 6px;
+  border: none;
+  background-color: white;
+  color: #0077ff;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: none; /* for Link buttons */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+.header-btn:hover {
+  background-color: #e6e6e6;
+}
+
+.logout-btn {
+  background-color: #ff4d4f;
+  color: white;
+}
+
+.logout-btn:hover {
+  background-color: #e04344;
+}
+
+.signup-btn {
+  background-color: #28a745;
+  color: white;
+}
+
+.signup-btn:hover {
+  background-color: #218838;
 }

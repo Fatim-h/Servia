@@ -185,7 +185,7 @@ def admin_get_causes():
 
 # -------------------- VERIFY / UNVERIFY --------------------
 @main.route("/api/admin/verify/<int:auth_id>", methods=["PATCH"])
-@require_admin
+@main.route("/api/admin/verify/cause/<int:auth_id>", methods=["PATCH"])
 def admin_verify(auth_id):
     auth = AuthData.query.get(auth_id)
     if not auth:
@@ -196,6 +196,10 @@ def admin_verify(auth_id):
         user = User.query.get(auth.fk_id)
         if user:
             user.verified = True
+            # Also verify all causes of this user
+            causes = Cause.query.filter_by(user_id=user.user_id).all()
+            for c in causes:
+                c.verified = True
     else:
         cause = Cause.query.get(auth.fk_id)
         if cause:
@@ -204,8 +208,9 @@ def admin_verify(auth_id):
     db.session.commit()
     return jsonify({"message": "Verified"})
 
+
 @main.route("/api/admin/unverify/<int:auth_id>", methods=["PATCH"])
-@require_admin
+@main.route("/api/admin/unverify/cause/<int:auth_id>", methods=["PATCH"])
 def admin_unverify(auth_id):
     auth = AuthData.query.get(auth_id)
     if not auth:
@@ -216,6 +221,10 @@ def admin_unverify(auth_id):
         user = User.query.get(auth.fk_id)
         if user:
             user.verified = False
+            # Also unverify all causes of this user
+            causes = Cause.query.filter_by(user_id=user.user_id).all()
+            for c in causes:
+                c.verified = False
     else:
         cause = Cause.query.get(auth.fk_id)
         if cause:
@@ -351,3 +360,161 @@ def get_cause(cause_id):
         })
 
     return jsonify(cause_data)
+
+# ------------------------------------------------------------
+# GET SINGLE USER (for UserPage)
+# ------------------------------------------------------------
+
+@main.route("/api/admin/user/<int:user_id>", methods=["GET"])
+@require_admin
+def admin_get_user(user_id):
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
+    return jsonify({
+        "user": {
+            "user_id": user.user_id,
+            "name": user.name,
+            "email": user.email,
+            "age": user.age,
+            "verified": user.verified,
+            "auth_id": user.auth_id
+        }
+    })
+
+#----Get causes for the user----
+
+@main.route("/api/admin/user/<int:user_id>/causes", methods=["GET"])
+@require_admin
+def admin_get_user_causes(user_id):
+    causes = Cause.query.filter_by(user_id=user_id).all()
+    result = []
+    for c in causes:
+        subtype = "NGO" if c.ngo else "Event" if c.event else "Unknown"
+        result.append({
+            "cause_id": c.cause_id,
+            "name": c.name,
+            "type": subtype,
+            "verified": c.verified
+        })
+    return jsonify({"causes": result})
+
+
+# Get current user dashboard data
+@main.route("/api/user/dashboard", methods=["GET"])
+def user_dashboard():
+    user_session = session.get("user")
+    if not user_session or user_session.get("role") != "user":
+        return jsonify({"error": "Not logged in or unauthorized"}), 401
+
+    user = User.query.get(user_session["id"])
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
+    # Causes owned by user
+    causes = Cause.query.filter_by(user_id=user.user_id).all()
+    cause_list = []
+    for c in causes:
+        subtype = "NGO" if c.ngo else "Event" if c.event else "Unknown"
+        cause_list.append({
+            "cause_id": c.cause_id,
+            "name": c.name,
+            "description": c.description,
+            "type": subtype,
+            "verified": c.verified
+        })
+
+    # Donations by user
+    donations = Donation.query.filter_by(user_id=user.user_id).all()
+    donation_list = [{
+        "donation_id": d.donation_id,
+        "amount": d.amount,
+        "cause_id": d.cause_id,
+        "date": d.date.strftime("%Y-%m-%d") if d.date else None
+    } for d in donations]
+
+    # Feedbacks by user
+    feedbacks = Feedback.query.filter_by(user_id=user.user_id).all()
+    feedback_list = [{
+        "feedback_id": f.feedback_id,
+        "cause_id": f.cause_id,
+        "message": f.message,
+        "date": f.date.strftime("%Y-%m-%d") if f.date else None
+    } for f in feedbacks]
+
+    # Volunteer entries by user
+    volunteers = Volunteer.query.filter_by(user_id=user.user_id).all()
+    volunteer_list = [{
+        "volunteer_id": v.volunteer_id,
+        "cause_id": v.cause_id,
+        "hours": v.hours,
+        "date": v.date.strftime("%Y-%m-%d") if v.date else None
+    } for v in volunteers]
+
+    return jsonify({
+        "user": {
+            "user_id": user.user_id,
+            "name": user.name,
+            "email": user.email,
+            "age": user.age,
+            "verified": user.verified
+        },
+        "causes": cause_list,
+        "donations": donation_list,
+        "feedbacks": feedback_list,
+        "volunteers": volunteer_list
+    })
+
+#----Update Current User-----
+@main.route("/api/user/dashboard/update", methods=["PATCH"])
+def update_user():
+    user_session = session.get("user")
+    if not user_session or user_session.get("role") != "user":
+        return jsonify({"error": "Not logged in or unauthorized"}), 401
+
+    user = User.query.get(user_session["id"])
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
+    data = request.get_json()
+    user.name = data.get("name", user.name)
+    user.email = data.get("email", user.email)
+    user.age = data.get("age", user.age)
+
+    db.session.commit()
+    return jsonify({"message": "User updated successfully"})
+
+#----Delete donations/feedback/volunteer entries for user-----
+# Delete donation
+@main.route("/api/user/dashboard/donation/<int:donation_id>", methods=["DELETE"])
+def delete_donation(donation_id):
+    user_session = session.get("user")
+    donation = Donation.query.filter_by(donation_id=donation_id, user_id=user_session["id"]).first()
+    if not donation:
+        return jsonify({"error": "Donation not found"}), 404
+    db.session.delete(donation)
+    db.session.commit()
+    return jsonify({"message": "Donation deleted"})
+
+# Delete feedback
+@main.route("/api/user/dashboard/feedback/<int:feedback_id>", methods=["DELETE"])
+def delete_feedback(feedback_id):
+    user_session = session.get("user")
+    feedback = Feedback.query.filter_by(feedback_id=feedback_id, user_id=user_session["id"]).first()
+    if not feedback:
+        return jsonify({"error": "Feedback not found"}), 404
+    db.session.delete(feedback)
+    db.session.commit()
+    return jsonify({"message": "Feedback deleted"})
+
+# Delete volunteer
+@main.route("/api/user/dashboard/volunteer/<int:volunteer_id>", methods=["DELETE"])
+def delete_volunteer(volunteer_id):
+    user_session = session.get("user")
+    volunteer = Volunteer.query.filter_by(volunteer_id=volunteer_id, user_id=user_session["id"]).first()
+    if not volunteer:
+        return jsonify({"error": "Volunteer entry not found"}), 404
+    db.session.delete(volunteer)
+    db.session.commit()
+    return jsonify({"message": "Volunteer deleted"})

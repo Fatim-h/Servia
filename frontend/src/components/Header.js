@@ -26,24 +26,28 @@ const Header = () => {
   };
 
   return (
-    <header style={{ padding: '1rem', background: '#f5f5f5', display: 'flex', justifyContent: 'space-between' }}>
-      <h2><Link to="/">Servia</Link></h2>
-      <div>
+    <header className="header">
+      <div className="logo">
+        <Link to="/">Servia</Link>
+      </div>
+      <nav>
         {auth ? (
           <>
-            <span style={{ marginRight: '1rem' }}>Welcome, {auth.name}</span>
-            <button onClick={handleDashboard} style={{ marginRight: '1rem' }}>
+            <span className="welcome-text">Welcome, {auth.name}</span>
+            <button className="header-btn" onClick={handleDashboard}>
               Dashboard
             </button>
-            <button onClick={() => { logout(); navigate('/login'); }}>Logout</button>
+            <button className="header-btn logout-btn" onClick={() => { logout(); navigate('/login'); }}>
+              Logout
+            </button>
           </>
         ) : (
           <>
-            <Link to="/login" style={{ marginRight: '1rem' }}>Login</Link>
-            <Link to="/signup">Sign Up</Link>
+            <Link className="header-btn" to="/login">Login</Link>
+            <Link className="header-btn signup-btn" to="/signup">Sign Up</Link>
           </>
         )}
-      </div>
+      </nav>
     </header>
   );
 };
