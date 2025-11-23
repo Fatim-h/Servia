@@ -1,9 +1,23 @@
+# Core Flask
 Flask==2.3.3
-Flask-SQLAlchemy==3.0.5
-Flask-Migrate==4.0.5
-Flask-CORS==4.0.0
-Flask-JWT-Extended==4.5.3
+
+# Database
+Flask-SQLAlchemy==3.0.3
+Flask-Migrate==4.0.4
+
+# Authentication & Security
+Flask-JWT-Extended==4.4.4
+Flask-Login==0.6.2
+Werkzeug==2.3.8
+
+# CORS (Cross-Origin Resource Sharing)
+Flask-Cors==3.1.1
+
+# Environment variables
 python-dotenv==1.0.0
-psycopg2-binary==2.9.7
-geoalchemy2==0.13.3
-Werkzeug==2.3.7
+
+# Optional: If you use psycopg2 for PostgreSQL
+psycopg2-binary==2.9.9
+
+# Optional: For password hashing (if not just using werkzeug)
+bcrypt==4.0.1
