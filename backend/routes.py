@@ -35,39 +35,46 @@ def create_admin_if_missing():
 @main.route("/api/auth/register", methods=["POST"])
 def register():
     data = request.get_json()
-    required_fields = ["name", "password", "role", "email"]
-    if not all(field in data for field in required_fields):
-        return jsonify({"error": "Missing required fields"}), 400
+    name = data.get("name")
+    password = data.get("password")
+    email = data.get("email")
+    role = data.get("role")
 
-    name = data["name"]
-    password = data["password"]
-    role = data["role"]
-    email = data["email"]
+    if not name or not role or not email or (role == "user" and not password):
+        return jsonify({"error": "Missing required fields"}), 400
 
     if role not in ["user", "ngo", "event"]:
         return jsonify({"error": "Invalid role"}), 400
 
-    # Check duplicates
-    if AuthData.query.filter_by(name=name).first() or User.query.filter_by(email=email).first():
+    # Check duplicates for users only
+    if role == "user" and (AuthData.query.filter_by(name=name).first() or User.query.filter_by(email=email).first()):
         return jsonify({"error": "User/email already exists"}), 400
 
-    auth = AuthData(name=name, role=role, verified=False)
-    auth.set_password(password)
-    db.session.add(auth)
-    db.session.commit()
-
     if role == "user":
-        user = User(name=name, email=email, verified=False, auth_id=auth.id)
+        auth = AuthData(name=name, role=role, verified=False)
+        auth.set_password(password)
+        db.session.add(auth)
+        db.session.commit()
+
+        user = User(
+            name=name,
+            email=email,
+            verified=False,
+            auth_id=auth.id,
+            age=data.get("age")
+        )
         db.session.add(user)
         db.session.commit()
         auth.fk_id = user.user_id
         db.session.commit()
+
         return jsonify({"message": "User created, awaiting admin verification.", "auth_id": auth.id, "user_id": user.user_id}), 201
 
-    # NGO / Event
+    # NGO/Event registration
     owner_user_id = data.get("owner_user_id")
     if not owner_user_id:
         return jsonify({"error": "NGO/Event requires owner_user_id"}), 400
+
     owner = User.query.get(owner_user_id)
     if not owner or not owner.verified:
         return jsonify({"error": "Owner must be admin-verified"}), 403
@@ -75,30 +82,33 @@ def register():
     cause = Cause(
         name=name,
         description=data.get("description"),
-        email=email,
+        email=owner.email,
         if_online=data.get("if_online", False),
         logo=data.get("logo"),
         user_id=owner_user_id,
-        verified=False,
-        auth_id=auth.id
+        verified=False
     )
     db.session.add(cause)
     db.session.commit()
-    auth.fk_id = cause.cause_id
-    db.session.commit()
 
     if role == "ngo":
-        ngo = NGO(cause_id=cause.cause_id, year_est=data.get("year_est"), age=data.get("age"))
+        ngo = NGO(cause_id=cause.cause_id, year_est=data.get("year_est"))
         db.session.add(ngo)
         db.session.commit()
     elif role == "event":
         event_date = datetime.strptime(data["date"], "%Y-%m-%d").date() if data.get("date") else None
         event_time = datetime.strptime(data["time"], "%H:%M").time() if data.get("time") else None
-        event = Event(cause_id=cause.cause_id, capacity=data.get("capacity"), date=event_date, time=event_time, ngo_id=data.get("ngo_id"))
+        event = Event(
+            cause_id=cause.cause_id,
+            capacity=data.get("capacity"),
+            date=event_date,
+            time=event_time,
+            ngo_id=data.get("ngo_id")
+        )
         db.session.add(event)
         db.session.commit()
 
-    return jsonify({"message": f"{role.capitalize()} created, awaiting admin verification.", "auth_id": auth.id, "cause_id": cause.cause_id}), 201
+    return jsonify({"message": f"{role.capitalize()} created, awaiting admin verification.", "cause_id": cause.cause_id}), 201
 
 # -------------------- LOGIN --------------------
 @main.route("/api/auth/login", methods=["POST"])

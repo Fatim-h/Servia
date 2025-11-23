@@ -8,7 +8,7 @@ const API_URL = "http://localhost:5000/api";
 
 const SignUp = () => {
   const navigate = useNavigate();
-  const [role, setRole] = useState("user"); // toggle: user / ngo / event
+  const [role, setRole] = useState("user");
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -24,7 +24,7 @@ const SignUp = () => {
     ngo_id: ""
   });
 
-  const [ownerUserId, setOwnerUserId] = useState(""); // for NGO/Event
+  const [ownerUserId, setOwnerUserId] = useState(""); // For NGO/Event
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
@@ -42,20 +42,14 @@ const SignUp = () => {
     setSuccess("");
 
     try {
-      // Build payload depending on role
-      const payload = { role };
+      const payload = { role, name: formData.name, email: formData.email };
 
       if (role === "user") {
-        payload.name = formData.name;
-        payload.email = formData.email;
         payload.password = formData.password;
-        payload.age = formData.age; // include age for users
+        payload.age = formData.age;
       } else {
-        // NGO or Event
-        payload.name = formData.name;
-        payload.email = formData.email;
-        payload.password = formData.password;
-        payload.owner_user_id = ownerUserId; // must be a verified user
+        payload.owner_user_id = ownerUserId;
+        payload.password = formData.password; // only used if backend expects, can be ignored
 
         if (role === "ngo") {
           payload.description = formData.description;
@@ -87,174 +81,82 @@ const SignUp = () => {
 
       {/* Role Toggle */}
       <div className="role-toggle">
-        <button
-          className={role === "user" ? "active" : ""}
-          onClick={() => setRole("user")}
-        >
-          User
-        </button>
-        <button
-          className={role === "ngo" ? "active" : ""}
-          onClick={() => setRole("ngo")}
-        >
-          NGO
-        </button>
-        <button
-          className={role === "event" ? "active" : ""}
-          onClick={() => setRole("event")}
-        >
-          Event
-        </button>
+        <button className={role === "user" ? "active" : ""} onClick={() => setRole("user")}>User</button>
+        <button className={role === "ngo" ? "active" : ""} onClick={() => setRole("ngo")}>NGO</button>
+        <button className={role === "event" ? "active" : ""} onClick={() => setRole("event")}>Event</button>
       </div>
 
       {error && <p className="error">{error}</p>}
       {success && <p className="success">{success}</p>}
 
       <form onSubmit={handleSubmit}>
-        {/* COMMON FIELDS */}
         <label>
           Name:
-          <input
-            type="text"
-            name="name"
-            value={formData.name}
-            onChange={handleChange}
-            required
-          />
+          <input type="text" name="name" value={formData.name} onChange={handleChange} required />
         </label>
 
         <label>
           Email:
-          <input
-            type="email"
-            name="email"
-            value={formData.email}
-            onChange={handleChange}
-            required
-          />
+          <input type="email" name="email" value={formData.email} onChange={handleChange} required />
         </label>
 
         <label>
           Password:
-          <input
-            type="password"
-            name="password"
-            value={formData.password}
-            onChange={handleChange}
-            required
-          />
+          <input type="password" name="password" value={formData.password} onChange={handleChange} required />
         </label>
 
-        {/* USER ONLY */}
         {role === "user" && (
           <label>
             Age:
-            <input
-              type="number"
-              name="age"
-              value={formData.age}
-              onChange={handleChange}
-            />
+            <input type="number" name="age" value={formData.age} onChange={handleChange} />
           </label>
         )}
 
-        {/* NGO / EVENT */}
         {role !== "user" && (
           <label>
             Owner User ID (must be verified):
-            <input
-              type="number"
-              value={ownerUserId}
-              onChange={(e) => setOwnerUserId(e.target.value)}
-              required
-            />
+            <input type="number" value={ownerUserId} onChange={(e) => setOwnerUserId(e.target.value)} required />
           </label>
         )}
 
-        {/* NGO FIELDS */}
         {role === "ngo" && (
           <>
             <label>
               Description:
-              <textarea
-                name="description"
-                value={formData.description}
-                onChange={handleChange}
-              />
+              <textarea name="description" value={formData.description} onChange={handleChange} />
             </label>
-
             <label>
               Logo URL:
-              <input
-                type="text"
-                name="logo"
-                value={formData.logo}
-                onChange={handleChange}
-              />
+              <input type="text" name="logo" value={formData.logo} onChange={handleChange} />
             </label>
-
             <label>
               Year Established:
-              <input
-                type="number"
-                name="year_est"
-                value={formData.year_est}
-                onChange={handleChange}
-              />
+              <input type="number" name="year_est" value={formData.year_est} onChange={handleChange} />
             </label>
           </>
         )}
 
-        {/* EVENT FIELDS */}
         {role === "event" && (
           <>
             <label>
               Description:
-              <textarea
-                name="description"
-                value={formData.description}
-                onChange={handleChange}
-              />
+              <textarea name="description" value={formData.description} onChange={handleChange} />
             </label>
-
             <label>
               Capacity:
-              <input
-                type="number"
-                name="capacity"
-                value={formData.capacity}
-                onChange={handleChange}
-              />
+              <input type="number" name="capacity" value={formData.capacity} onChange={handleChange} />
             </label>
-
             <label>
               Date:
-              <input
-                type="date"
-                name="date"
-                value={formData.date}
-                onChange={handleChange}
-              />
+              <input type="date" name="date" value={formData.date} onChange={handleChange} />
             </label>
-
             <label>
               Time:
-              <input
-                type="time"
-                name="time"
-                value={formData.time}
-                onChange={handleChange}
-              />
+              <input type="time" name="time" value={formData.time} onChange={handleChange} />
             </label>
-
             <label>
               NGO ID:
-              <input
-                type="number"
-                name="ngo_id"
-                value={formData.ngo_id}
-                onChange={handleChange}
-              />
+              <input type="number" name="ngo_id" value={formData.ngo_id} onChange={handleChange} />
             </label>
           </>
         )}
@@ -262,9 +164,7 @@ const SignUp = () => {
         <button type="submit">Sign Up</button>
       </form>
 
-      <p>
-        Already have an account? <a href="/login">Login here</a>
-      </p>
+      <p>Already have an account? <a href="/login">Login here</a></p>
     </div>
   );
 };
