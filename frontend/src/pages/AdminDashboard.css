@@ -1,17 +1,54 @@
 .admin-container {
-    padding: 30px;
-    font-family: "Inter", sans-serif;
+  max-width: 900px;
+  margin: 40px auto;
+  padding: 20px;
+  font-family: "Inter", sans-serif;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background-color: #f9f9f9;
 }
 
-h1 {
-    text-align: center;
-    margin-bottom: 20px;
-    font-weight: 600;
+h1, h2 {
+  text-align: center;
+  margin-bottom: 20px;
 }
 
-.cards-container {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 18px;
-    margin-top: 20px;
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 40px;
+}
+
+.admin-table th, .admin-table td {
+  border: 1px solid #ccc;
+  padding: 10px;
+  text-align: center;
+}
+
+.btn {
+  padding: 8px 12px;
+  margin: 0 5px;
+  background-color: #1f6feb;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: transform 0.1s, background-color 0.2s;
+}
+
+.btn:hover {
+  background-color: #1158c7;
+  transform: scale(1.05);
+}
+
+.btn:active {
+  transform: scale(0.95);
+}
+
+.btn-delete {
+  background-color: #e53e3e;
+}
+
+.btn-delete:hover {
+  background-color: #9b1c1c;
 }

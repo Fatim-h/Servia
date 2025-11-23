@@ -1,11 +1,11 @@
 // src/services/authService.js
 import api from "./api";
 
-// LOGIN
-export const loginUser = async (email, password) => {
+// LOGIN using session cookie
+export const loginUser = async (name, password) => {
   try {
-    const response = await api.post("/api/auth/login", { name: email, password });
-    return response.data;
+    const response = await api.post("/api/auth/login", { name, password });
+    return response.data; // { auth_id, role, name } from backend session
   } catch (error) {
     throw error.response?.data || { error: "Login failed" };
   }
@@ -21,12 +21,20 @@ export const registerUser = async (data) => {
   }
 };
 
-// GET USER FROM TOKEN
-export const getUserFromToken = async (token) => {
+// LOGOUT
+export const logoutUser = async () => {
   try {
-    const response = await api.get("/api/auth/user", {
-      headers: { Authorization: `Bearer ${token}` }
-    });
+    await api.post("/api/auth/logout"); // optional backend logout endpoint
+    return true;
+  } catch (error) {
+    throw error.response?.data || { error: "Logout failed" };
+  }
+};
+
+// GET CURRENT USER (from session)
+export const getCurrentUser = async () => {
+  try {
+    const response = await api.get("/api/auth/user"); // returns session user info
     return response.data;
   } catch (error) {
     throw error.response?.data || { error: "Failed to fetch user" };

@@ -11,7 +11,9 @@ const LoginPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    console.log("Submitting login...");
     const success = await login({ name, password });
+    console.log("Login result:", success);
     if (success) {
       navigate('/'); // redirect after successful login
     }

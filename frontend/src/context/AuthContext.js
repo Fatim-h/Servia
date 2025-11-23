@@ -1,40 +1,46 @@
-import React, { createContext, useContext, useState } from 'react';
-import api from '../services/api'; // Axios instance with baseURL
+import React, { createContext, useContext, useState, useEffect } from "react";
+import { loginUser, logoutUser, getCurrentUser } from "../services/authService";
 
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [auth, setAuth] = useState(() => {
-    const stored = localStorage.getItem('auth');
-    return stored ? JSON.parse(stored) : null;
-  });
+  const [auth, setAuth] = useState(null);
+
+  // Load current user on app start
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const user = await getCurrentUser();
+        if (user && !user.error) setAuth(user);
+        else setAuth(null);
+      } catch {
+        setAuth(null);
+      }
+    };
+    fetchUser();
+  }, []);
 
   // Login function
   const login = async ({ name, password }) => {
     try {
-      const res = await api.post('/api/auth/login', { name, password });
-      const data = res.data;
+      const user = await loginUser(name, password);
+      if (!user || user.error) return false; // check backend error
 
-      const authData = {
-        token: data.token,
-        authId: data.auth_id,  // renamed for clarity
-        role: data.role,
-        name: data.name,
-      };
-
-      setAuth(authData);
-      localStorage.setItem('auth', JSON.stringify(authData));
+      setAuth(user);
       return true;
-    } catch (err) {
-      console.error(err.response?.data || err);
-      alert(err.response?.data?.error || 'Login failed');
+    } catch (error) {
+      console.error(error);
       return false;
     }
   };
 
-  const logout = () => {
-    setAuth(null);
-    localStorage.removeItem('auth');
+  // Logout function
+  const logout = async () => {
+    try {
+      await logoutUser();
+    } finally {
+      setAuth(null);
+    }
   };
 
   return (

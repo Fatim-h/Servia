@@ -1,8 +1,8 @@
 # backend/__init__.py
-# Can be empty or contain shared extensions if you prefer
 
 from flask_sqlalchemy import SQLAlchemy
 from flask_jwt_extended import JWTManager
 
+# Create extension instances here, to be initialized in server.py
 db = SQLAlchemy()
 jwt = JWTManager()
