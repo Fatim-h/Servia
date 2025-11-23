@@ -1,25 +1,24 @@
-// frontend/src/services/causeService.js
-import axios from 'axios';
-import { jwtDecode } from 'jwt-decode';
+// src/services/causeService.js
+import api from "./api";
 
-const API_URL = 'http://localhost:5000/api';
-
-export const login = async (email, password) => {
-  const res = await axios.post(`${API_URL}/auth/login`, { email, password });
-  return res.data;
-};
-
-export const getUserFromToken = (token) => {
-  const decoded = jwtDecode(token);
-  return { id: decoded.sub, name: decoded.name, role: decoded.role, email: decoded.email };
-};
-
+// GET all verified causes (NGOs + Events)
 export const getAllCauses = async () => {
-  const res = await axios.get(`${API_URL}/causes`);
-  return res.data.data;
+  try {
+    const response = await api.get("/api/causes");
+    return response.data; // { causes: [...] }
+  } catch (error) {
+    console.error("Error fetching causes:", error);
+    throw error.response?.data || { error: "Failed to fetch causes" };
+  }
 };
 
-export const getCauseById = async (id) => {
-  const res = await axios.get(`${API_URL}/causes/${id}`);
-  return res.data;
+// GET a single cause by ID
+export const getCauseById = async (cause_id) => {
+  try {
+    const response = await api.get(`/api/causes/${cause_id}`);
+    return response.data; // single cause object
+  } catch (error) {
+    console.error(`Error fetching cause ${cause_id}:`, error);
+    throw error.response?.data || { error: "Failed to fetch cause" };
+  }
 };

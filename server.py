@@ -1,63 +1,43 @@
 # server.py
 from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
+from backend import db, jwt  # import the shared instances
 from flask_jwt_extended import JWTManager
 from flask_cors import CORS
 from flask_migrate import Migrate
 from dotenv import load_dotenv
 import os
-import logging
+import click
+from flask.cli import with_appcontext
 
-# Load environment variables
+migrate = Migrate()  # only create Migrate here
+
 load_dotenv()
 
-# Initialize extensions
-db = SQLAlchemy()
-jwt = JWTManager()
-migrate = Migrate()
-
-# Logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+DATABASE_URL = os.getenv("DATABASE_URL")
+print("DB URL:", DATABASE_URL)
 
 def create_app():
     app = Flask(__name__)
 
-    # ----------- Config -----------
-    app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv(
-        'DATABASE_URL', 'sqlite:///app.db'
+    # Configuration
+    app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv(
+        "DATABASE_URL", "sqlite:///app.db"
     )
-    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-    app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY', 'super-secret-key')
+    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+    app.config["JWT_SECRET_KEY"] = os.getenv("JWT_SECRET_KEY", "super-secret-key")
 
-    # ----------- Init extensions -----------
+    # Initialize extensions
     db.init_app(app)
     jwt.init_app(app)
     migrate.init_app(app, db)
     CORS(app)
 
-    # ----------- Import models & routes -----------
-    from backend import models
-    from backend.routes import main, create_admin_if_missing
-
-    # Register blueprint
+    # Import models and routes
+    from backend.routes import main
     app.register_blueprint(main)
 
-    # ----------- Initialize defaults once -----------
-    @app.before_request
-    def init_defaults_once():
-        if not hasattr(app, "_init_done"):
-            with app.app_context():
-                db.create_all()
-                create_admin_if_missing()
-            app._init_done = True
-
-    return app
+    return app  # <-- return app here
 
 if __name__ == "__main__":
     app = create_app()
-    app.run(
-        host="0.0.0.0",
-        port=int(os.getenv("PORT", 5000)),
-        debug=True
-    )
+    app.run(host="0.0.0.0", port=5000, debug=True)

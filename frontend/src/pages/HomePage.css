@@ -1,0 +1,96 @@
+.homepage-container {
+  display: flex;
+  flex-direction: column;
+}
+
+.homepage-content {
+  width: 100%;
+  max-width: 1200px;
+  margin: auto;
+  padding: 20px;
+}
+
+/* Search Bar */
+.search-bar {
+  width: 100%;
+  max-width: 500px;
+  padding: 12px 15px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  margin: 20px auto;
+  font-size: 16px;
+  display: block;
+  outline: none;
+  transition: 0.2s;
+}
+
+.search-bar:focus {
+  border-color: #0077ff;
+  box-shadow: 0 0 5px #0077ff;
+}
+
+/* Filter buttons */
+.filter-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 25px;
+}
+
+.filter-buttons button {
+  padding: 10px 20px;
+  border-radius: 20px;
+  border: 1px solid #aaa;
+  background: white;
+  cursor: pointer;
+}
+
+.filter-buttons .active {
+  background: #0077ff;
+  color: white;
+  border-color: #0077ff;
+}
+
+/* Map */
+.map-section {
+  height: 350px;
+  margin-bottom: 40px;
+}
+
+.leaflet-container {
+  height: 100%;
+  width: 100%;
+  border-radius: 10px;
+}
+
+/* Gallery */
+.cause-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 20px;
+}
+
+.cause-card {
+  padding: 15px;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.cause-card:hover {
+  transform: scale(1.03);
+  box-shadow: 0px 4px 10px rgba(0,0,0,0.1);
+}
+
+.cause-logo {
+  width: 100%;
+  height: 130px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.cause-description {
+  font-size: 14px;
+  color: #555;
+}

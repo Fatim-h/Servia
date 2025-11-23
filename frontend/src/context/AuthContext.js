@@ -1,33 +1,35 @@
 // src/context/AuthContext.js
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import * as causeService from '../services/causeservice';
+import * as authService from '../services/authService';
+import { getUserFromToken } from '../services/authService';
 
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
 
-  // Load user from localStorage if token exists
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
-      const loggedUser = causeService.getUserFromToken(token);
-      setUser(loggedUser);
+      setUser(getUserFromToken(token));
     }
   }, []);
 
+  // LOGIN
   const login = async (email, password) => {
     try {
-      const data = await causeService.login(email, password);
+      const data = await authService.loginUser(email, password); // returns { token }
       localStorage.setItem('token', data.token);
-      const loggedUser = causeService.getUserFromToken(data.token);
-      setUser(loggedUser);
-      return loggedUser;
+
+      const decoded = getUserFromToken(data.token);
+      setUser(decoded);
+      return decoded;
     } catch (err) {
       throw err;
     }
   };
 
+  // LOGOUT
   const logout = () => {
     localStorage.removeItem('token');
     setUser(null);

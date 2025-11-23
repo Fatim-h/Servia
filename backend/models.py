@@ -6,7 +6,7 @@ from datetime import datetime
 class AuthData(db.Model):
     __tablename__ = 'auth_data'
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(120), nullable=False)
+    name = db.Column(db.String(120), unique=True, nullable=False)
     role = db.Column(db.String(20), nullable=False)  # user, ngo, event, admin
     password_hash = db.Column(db.String(255), nullable=False)
 
@@ -63,6 +63,7 @@ class Cause(db.Model):
     contacts = db.relationship('CauseContact', backref='cause', lazy=True)
     auth_id = db.Column(db.Integer, db.ForeignKey('auth_data.id'), unique=True)
     auth = db.relationship("AuthData", backref="cause", uselist=False)
+    verified = db.Column(db.Boolean, default=False)
 
 # ---------------- NGO ----------------
 class NGO(db.Model):
@@ -94,12 +95,14 @@ class Location(db.Model):
     city = db.Column(db.String(100))
     contact_no = db.Column(db.String(50))
     cause_id = db.Column(db.Integer, db.ForeignKey('cause.cause_id'))
+    address = db.Column(db.String(255))
 
 
 # ---------------- ACCOUNT DETAILS ----------------
 class AccountDetails(db.Model):
     __tablename__ = 'account_details'
-    iban = db.Column(db.String(50), primary_key=True)
+    id = db.Column(db.Integer, primary_key=True)
+    iban = db.Column(db.String(50), unique=True)
     acc_name = db.Column(db.String(100))
     user_id = db.Column(db.Integer, db.ForeignKey('user.user_id'))
     cause_id = db.Column(db.Integer, db.ForeignKey('cause.cause_id'))

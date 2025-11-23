@@ -21,7 +21,7 @@ const CauseMap = ({ causes }) => {
       />
       {causes.map(cause =>
         cause.locations?.map((loc, idx) => (
-          <Marker key={`${cause.id}-${idx}`} position={[loc.latitude, loc.longitude]}>
+          <Marker key={`${cause.cause_id}-${idx}`} position={[loc.latitude, loc.longitude]}>
             <Popup>
               <strong>{cause.name}</strong><br />
               {cause.type.toUpperCase()}<br />

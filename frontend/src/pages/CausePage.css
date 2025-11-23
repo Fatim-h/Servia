@@ -1,50 +1,101 @@
-/* src/pages/CausePage.css */
-.cause-page-container {
-  padding: 2rem;
+.cause-page {
+  width: 100%;
+  max-width: 1000px;
+  margin: auto;
+  padding-bottom: 50px;
 }
 
-.cause-header {
-  display: flex;
-  gap: 2rem;
-  align-items: flex-start;
-  margin-bottom: 2rem;
-}
-
-.cause-logo {
-  width: 200px;
-  height: 200px;
+.cause-banner img {
+  width: 100%;
+  height: 280px;
   object-fit: cover;
-  border-radius: 10px;
-  border: 1px solid #ddd;
+  border-radius: 12px;
+  margin-bottom: 20px;
 }
 
-.cause-info h1 {
-  margin: 0 0 0.5rem 0;
+.cause-info-section {
+  padding: 0 10px;
+}
+
+.cause-info-section h1 {
+  font-size: 28px;
+  font-weight: bold;
 }
 
 .cause-type {
-  font-weight: bold;
-  color: #555;
-  margin-bottom: 1rem;
+  color: #0077ff;
+  font-size: 18px;
+  margin-top: -5px;
 }
 
 .cause-description {
-  font-size: 1rem;
-  color: #333;
+  margin-top: 15px;
+  font-size: 16px;
+  color: #444;
 }
 
-.event-details {
-  margin-bottom: 2rem;
-  padding: 1rem;
-  border: 1px solid #eee;
+/* Buttons */
+.cta-buttons {
+  display: flex;
+  gap: 15px;
+  margin-top: 20px;
+}
+
+.donate-btn,
+.volunteer-btn {
+  padding: 12px 20px;
   border-radius: 8px;
-  background: #f9f9f9;
+  border: none;
+  color: white;
+  cursor: pointer;
+  font-size: 15px;
 }
 
-.event-details h3 {
-  margin-top: 0;
+.donate-btn {
+  background-color: #28a745; /* green */
 }
 
+.volunteer-btn {
+  background-color: #ff9800; /* orange */
+}
+
+.donate-btn:hover {
+  background-color: #1f8c38;
+}
+
+.volunteer-btn:hover {
+  background-color: #e68600;
+}
+
+/* Map */
 .cause-map-section {
-  margin-top: 2rem;
+  margin-top: 30px;
+}
+
+.leaflet-container {
+  width: 100%;
+  height: 300px;
+  border-radius: 10px;
+  margin-top: 10px;
+}
+
+/* Details Sections */
+.details-section {
+  margin-top: 30px;
+  padding: 15px;
+  background: #fafafa;
+  border-radius: 10px;
+}
+
+.details-section h2 {
+  margin-bottom: 10px;
+}
+
+.details-section ul {
+  padding-left: 20px;
+}
+
+.details-section li {
+  margin-bottom: 5px;
+  color: #555;
 }

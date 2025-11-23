@@ -9,6 +9,7 @@ import "./AdminDashboard.css";
 
 export default function AdminDashboard() {
     const [activeTab, setActiveTab] = useState("unverifiedUsers");
+
     const [users, setUsers] = useState([]);
     const [causes, setCauses] = useState([]);
 
@@ -26,13 +27,15 @@ export default function AdminDashboard() {
             const u = await AdminService.getUsers(token);
             const c = await AdminService.getCauses(token);
 
-            setUsers(u.data);
-            setCauses(c.data);
+            // These come from Axios → actual data is in u.data.data
+            setUsers(u.data.data || []);
+            setCauses(c.data.data || []);
         } catch (e) {
-            console.error(e);
+            console.error("Admin load error →", e);
         }
     };
 
+    // ADMIN ACTIONS
     const handleVerify = async (auth_id) => {
         await AdminService.verify(auth_id, token);
         loadData();
@@ -55,11 +58,14 @@ export default function AdminDashboard() {
         loadData();
     };
 
+    // FILTERS FOR TABS
     const filtered = {
         unverifiedUsers: users.filter(u => !u.verified),
         verifiedUsers: users.filter(u => u.verified),
+
         unverifiedCauses: causes.filter(c => !c.verified),
         verifiedCauses: causes.filter(c => c.verified),
+
         allUsers: users,
         allCauses: causes
     };
@@ -73,27 +79,34 @@ export default function AdminDashboard() {
             <AdminTabs active={activeTab} setActive={setActiveTab} />
 
             <div className="cards-container">
-                {list.map(item => (
-                    item.user_id ? (
-                        <UserCard
-                            key={item.user_id}
-                            user={item}
-                            onVerify={() => handleVerify(item.auth_id)}
-                            onUnverify={() => handleUnverify(item.auth_id)}
-                            onDelete={() => setDeleteTarget({ type: "user", id: item.user_id })}
-                            onView={() => setSelectedItem(item)}
-                        />
-                    ) : (
-                        <CauseCard
-                            key={item.cause_id}
-                            cause={item}
-                            onVerify={() => handleVerify(item.auth_id)}
-                            onUnverify={() => handleUnverify(item.auth_id)}
-                            onDelete={() => setDeleteTarget({ type: "cause", id: item.cause_id })}
-                            onView={() => setSelectedItem(item)}
-                        />
-                    )
-                ))}
+                {list.map(item => {
+                    // It's a user
+                    if (item.user_id) {
+                        return (
+                            <UserCard
+                                key={item.user_id}
+                                user={item}
+                                onVerify={() => handleVerify(item.auth_id)}
+                                onUnverify={() => handleUnverify(item.auth_id)}
+                                onDelete={() => setDeleteTarget({ type: "user", id: item.user_id })}
+                                onView={() => setSelectedItem(item)}
+                            />
+                        );
+                    }
+
+                    // It's a cause
+                    if (item.cause_id) {
+                        return (
+                            <CauseCard
+                                key={item.cause_id}
+                                cause={item}
+                                onClick={() => setSelectedItem(item)} // View cause details
+                            />
+                        );
+                    }
+
+                    return null;
+                })}
             </div>
 
             {selectedItem && (
