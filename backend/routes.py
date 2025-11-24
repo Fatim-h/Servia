@@ -132,6 +132,7 @@ def login():
 @main.route("/api/auth/logout", methods=["POST"])
 def logout():
     session.pop("user", None)
+    
     return jsonify({"message": "Logged out"}), 200
 
 # -------------------- CURRENT USER --------------------
@@ -383,7 +384,7 @@ def admin_get_user(user_id):
         }
     })
 
-#----Get causes for the user----
+#----Get causes for the user[for AdminDashboard.js]----
 
 @main.route("/api/admin/user/<int:user_id>/causes", methods=["GET"])
 @require_admin
@@ -401,56 +402,35 @@ def admin_get_user_causes(user_id):
     return jsonify({"causes": result})
 
 
-# Get current user dashboard data
-@main.route("/api/user/dashboard", methods=["GET"])
-def user_dashboard():
-    user_session = session.get("user")
-    if not user_session or user_session.get("role") != "user":
-        return jsonify({"error": "Not logged in or unauthorized"}), 401
+# ------------------------------------------------------------
+# DASHBOARD DATA FETCHING
+# ------------------------------------------------------------
+@main.route("/api/user/dashboard/data", methods=["POST"])
+def dashboard_data():
+    data = request.get_json()
+    auth_id = data.get("auth_id")
+    if not auth_id:
+        return jsonify({"error": "Auth ID missing"}), 400
 
-    user = User.query.get(user_session["id"])
+    auth = AuthData.query.get(auth_id)
+    if not auth or auth.role != "user":
+        return jsonify({"error": "User not found"}), 404
+
+    user = User.query.get(auth.fk_id)
     if not user:
         return jsonify({"error": "User not found"}), 404
 
-    # Causes owned by user
+    # --- same as before ---
     causes = Cause.query.filter_by(user_id=user.user_id).all()
-    cause_list = []
-    for c in causes:
-        subtype = "NGO" if c.ngo else "Event" if c.event else "Unknown"
-        cause_list.append({
-            "cause_id": c.cause_id,
-            "name": c.name,
-            "description": c.description,
-            "type": subtype,
-            "verified": c.verified
-        })
-
-    # Donations by user
-    donations = Donation.query.filter_by(user_id=user.user_id).all()
-    donation_list = [{
-        "donation_id": d.donation_id,
-        "amount": d.amount,
-        "cause_id": d.cause_id,
-        "date": d.date.strftime("%Y-%m-%d") if d.date else None
-    } for d in donations]
-
-    # Feedbacks by user
-    feedbacks = Feedback.query.filter_by(user_id=user.user_id).all()
-    feedback_list = [{
-        "feedback_id": f.feedback_id,
-        "cause_id": f.cause_id,
-        "message": f.message,
-        "date": f.date.strftime("%Y-%m-%d") if f.date else None
-    } for f in feedbacks]
-
-    # Volunteer entries by user
-    volunteers = Volunteer.query.filter_by(user_id=user.user_id).all()
-    volunteer_list = [{
-        "volunteer_id": v.volunteer_id,
-        "cause_id": v.cause_id,
-        "hours": v.hours,
-        "date": v.date.strftime("%Y-%m-%d") if v.date else None
-    } for v in volunteers]
+    donations = db.session.query(Donation, Cause.name.label("cause_name")) \
+        .join(Cause, Donation.cause_id == Cause.cause_id) \
+        .filter(Donation.user_id == user.user_id).all()
+    feedbacks = db.session.query(Feedback, Cause.name.label("cause_name")) \
+        .join(Cause, Feedback.cause_id == Cause.cause_id) \
+        .filter(Feedback.user_id == user.user_id).all()
+    volunteers = db.session.query(Volunteer, Cause.name.label("cause_name")) \
+        .join(Cause, Volunteer.cause_id == Cause.cause_id) \
+        .filter(Volunteer.user_id == user.user_id).all()
 
     return jsonify({
         "user": {
@@ -460,61 +440,203 @@ def user_dashboard():
             "age": user.age,
             "verified": user.verified
         },
-        "causes": cause_list,
-        "donations": donation_list,
-        "feedbacks": feedback_list,
-        "volunteers": volunteer_list
+        "causes": [{"cause_id": c.cause_id, "name": c.name, "type": "NGO" if c.ngo else "Event" if c.event else "Unknown", "verified": c.verified} for c in causes],
+        "donations": [{"donation_id": d[0].donation_id, "amount": d[0].amount, "cause_id": d[0].cause_id, "cause_name": d[1], "date": d[0].date.strftime("%Y-%m-%d") if d[0].date else None} for d in donations],
+        "feedbacks": [{"feedback_id": f[0].feedback_id, "cause_id": f[0].cause_id, "cause_name": f[1], "comment": f[0].comment, "rating": f[0].rating, "date": f[0].date.strftime("%Y-%m-%d") if f[0].date else None} for f in feedbacks],
+        "volunteers": [{"volunteer_id": v[0].volunteer_id, "cause_id": v[0].cause_id, "cause_name": v[1], "hours": v[0].hours, "date": v[0].date.strftime("%Y-%m-%d") if v[0].date else None} for v in volunteers]
     })
 
-#----Update Current User-----
-@main.route("/api/user/dashboard/update", methods=["PATCH"])
-def update_user():
-    user_session = session.get("user")
-    if not user_session or user_session.get("role") != "user":
-        return jsonify({"error": "Not logged in or unauthorized"}), 401
+#----update user-----
+@main.route("/api/user/<int:user_id>", methods=["PATCH"])
+def update_user(user_id):
+    data = request.get_json()
+    logged_user = data.get("logged_user")  # <- frontend sends this
+    if not logged_user or logged_user.get("role") != "user":
+        return jsonify({"error": "Not logged in"}), 401
 
-    user = User.query.get(user_session["id"])
+    user = User.query.get(user_id)
     if not user:
         return jsonify({"error": "User not found"}), 404
 
-    data = request.get_json()
-    user.name = data.get("name", user.name)
-    user.email = data.get("email", user.email)
-    user.age = data.get("age", user.age)
+    # Only allow updating own profile
+    if user.user_id != logged_user.get("fk_id"):
+        return jsonify({"error": "Unauthorized"}), 403
+
+    # Update allowed fields
+    for field in ["name", "email", "age"]:
+        if field in data:
+            setattr(user, field, data[field])
 
     db.session.commit()
     return jsonify({"message": "User updated successfully"})
 
-#----Delete donations/feedback/volunteer entries for user-----
-# Delete donation
-@main.route("/api/user/dashboard/donation/<int:donation_id>", methods=["DELETE"])
-def delete_donation(donation_id):
-    user_session = session.get("user")
-    donation = Donation.query.filter_by(donation_id=donation_id, user_id=user_session["id"]).first()
-    if not donation:
-        return jsonify({"error": "Donation not found"}), 404
-    db.session.delete(donation)
-    db.session.commit()
-    return jsonify({"message": "Donation deleted"})
+# Delete Cause(from UserDashboard)
+@main.route("/api/user/cause/<int:cause_id>", methods=["DELETE"])
+def delete_cause(cause_id):
+    data = request.get_json()
+    logged_user = data.get("logged_user")
+    if not logged_user or logged_user.get("role") != "user":
+        return jsonify({"error": "Not logged in"}), 401
 
-# Delete feedback
-@main.route("/api/user/dashboard/feedback/<int:feedback_id>", methods=["DELETE"])
-def delete_feedback(feedback_id):
-    user_session = session.get("user")
-    feedback = Feedback.query.filter_by(feedback_id=feedback_id, user_id=user_session["id"]).first()
-    if not feedback:
-        return jsonify({"error": "Feedback not found"}), 404
-    db.session.delete(feedback)
-    db.session.commit()
-    return jsonify({"message": "Feedback deleted"})
+    cause = Cause.query.get(cause_id)
+    if not cause:
+        return jsonify({"error": "Cause not found"}), 404
 
-# Delete volunteer
-@main.route("/api/user/dashboard/volunteer/<int:volunteer_id>", methods=["DELETE"])
-def delete_volunteer(volunteer_id):
-    user_session = session.get("user")
-    volunteer = Volunteer.query.filter_by(volunteer_id=volunteer_id, user_id=user_session["id"]).first()
-    if not volunteer:
-        return jsonify({"error": "Volunteer entry not found"}), 404
-    db.session.delete(volunteer)
+    # Only allow deleting if the cause belongs to the logged-in user
+    if cause.user_id != logged_user.get("fk_id"):
+        return jsonify({"error": "Unauthorized"}), 403
+
+    db.session.delete(cause)
     db.session.commit()
-    return jsonify({"message": "Volunteer deleted"})
+    return jsonify({"message": "Cause deleted successfully"})
+
+# Delete Feedback/donation/volunteer 
+@main.route("/api/user/<string:type>/<int:item_id>", methods=["DELETE"])
+def delete_item(type, item_id):
+    data = request.get_json()
+    logged_user = data.get("logged_user")
+    if not logged_user or logged_user.get("role") != "user":
+        return jsonify({"error": "Not logged in"}), 401
+
+    fk_id = logged_user.get("fk_id")
+
+    model_map = {
+        "donation": Donation,
+        "feedback": Feedback,
+        "volunteer": Volunteer
+    }
+
+    Model = model_map.get(type)
+    if not Model:
+        return jsonify({"error": "Invalid type"}), 400
+
+    item = Model.query.get(item_id)
+    if not item:
+        return jsonify({"error": f"{type.capitalize()} not found"}), 404
+
+    # Ensure the item belongs to the logged-in user
+    if item.user_id != fk_id:
+        return jsonify({"error": "Unauthorized"}), 403
+
+    db.session.delete(item)
+    db.session.commit()
+    return jsonify({"message": f"{type.capitalize()} deleted successfully"})
+
+# -------------------------
+# Get cause info
+# -------------------------
+
+def get_verified_user(auth_id):
+    """Check if the auth_id exists, role is 'user', and verified is True."""
+    auth = AuthData.query.filter_by(auth_id=auth_id).first()
+    if not auth:
+        return None, "User not found"
+    if auth.role != "user":
+        return None, "Not a regular user"
+    if not auth.verified:
+        return None, "You are not verified"
+    return auth, None
+
+# -------------------------
+# Donate
+# -------------------------
+@main.route("/api/cause/<int:cause_id>/donate", methods=["POST"])
+def donate(cause_id):
+    data = request.json
+    auth_id = data.get("auth_id")
+    amount = data.get("amount")
+    
+    # Step 1: Validate auth_id exists
+    auth = AuthData.query.filter_by(id=auth_id).first()
+    if not auth or auth.role != "user":
+        return jsonify({"error": "Invalid user"}), 403
+    
+    # Step 2: Check verified
+    if not auth.verified:
+        return jsonify({"error": "You are not verified"}), 403
+    
+    user = auth.fk_id
+    if not user:
+        return jsonify({"error": "User record not found"}), 404
+    
+    cause = Cause.query.get(cause_id)
+    if not cause:
+        return jsonify({"error": "Cause not found"}),
+    # Step 3: Create Donation
+    try:
+        donation = Donation(user_id=user, cause_id=cause_id, amount=amount)
+        db.session.add(donation)
+        db.session.commit()
+        return jsonify({"message": "Donation successful"})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+# -------------------------
+# Volunteer
+# -------------------------
+@main.route("/api/cause/<int:cause_id>/volunteer", methods=["POST"])
+def volunteer_cause(cause_id):
+    data = request.get_json()
+    auth_id = data.get("auth_id")
+    hours = data.get("hours")
+    date = data.get("date")  # optional
+
+    # Step 1: Validate auth_id exists
+    auth = AuthData.query.filter_by(id=auth_id).first()
+    if not auth or auth.role != "user":
+        return jsonify({"error": "Invalid user"}), 403
+    
+    # Step 2: Check verified
+    if not auth.verified:
+        return jsonify({"error": "You are not verified"}), 403
+    
+    user = auth.fk_id
+    if not user:
+        return jsonify({"error": "User record not found"}), 404
+
+    cause = Cause.query.get(cause_id)
+    if not cause:
+        return jsonify({"error": "Cause not found"}), 404
+
+    volunteer = Volunteer(user_id=user, cause_id=cause.cause_id)
+    db.session.add(volunteer)
+    db.session.commit()
+
+    return jsonify({"message": f"Volunteer of submitted successfully."}), 200
+
+# -------------------------
+# Feedback
+# -------------------------
+@main.route("/api/cause/<int:cause_id>/feedback", methods=["POST"])
+def feedback_cause(cause_id):
+    data = request.get_json()
+    auth_id = data.get("auth_id")
+    comment = data.get("comment")
+    rating = data.get("rating")
+    # Step 1: Validate auth_id exists
+    auth = AuthData.query.filter_by(id=auth_id).first()
+    if not auth or auth.role != "user":
+        return jsonify({"error": "Invalid user"}), 403
+    
+    # Step 2: Check verified
+    if not auth.verified:
+        return jsonify({"error": "You are not verified"}), 403
+    
+    user = auth.fk_id
+    if not user:
+        return jsonify({"error": "User record not found"}), 404
+
+    cause = Cause.query.get(cause_id)
+    if not cause:
+        return jsonify({"error": "Cause not found"}), 404
+
+    if not auth_id or not comment or rating is None:
+        return jsonify({"error": "auth_id, comment, and rating required"}), 400
+
+
+    feedback = Feedback(user_id=user, cause_id=cause.cause_id, comment=comment, rating=rating)
+    db.session.add(feedback)
+    db.session.commit()
+
+    return jsonify({"message": "Feedback submitted successfully."}), 200

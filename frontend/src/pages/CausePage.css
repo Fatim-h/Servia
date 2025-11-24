@@ -1,62 +1,75 @@
+/* ROOT PAGE */
 .cause-page {
   width: 100%;
   max-width: 1000px;
   margin: auto;
-  padding-bottom: 50px;
+  padding: 20px 10px 60px;
+  font-family: "Inter", sans-serif;
 }
 
+/* BANNER IMAGE */
 .cause-banner img {
   width: 100%;
   height: 280px;
   object-fit: cover;
-  border-radius: 12px;
-  margin-bottom: 20px;
+  border-radius: 14px;
+  margin-bottom: 25px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.08);
 }
 
+/* MAIN INFO */
 .cause-info-section {
   padding: 0 10px;
 }
 
 .cause-info-section h1 {
-  font-size: 28px;
-  font-weight: bold;
+  font-size: 30px;
+  font-weight: 700;
+  margin-bottom: 4px;
 }
 
 .cause-type {
   color: #0077ff;
   font-size: 18px;
-  margin-top: -5px;
+  margin-bottom: 12px;
 }
 
 .cause-description {
-  margin-top: 15px;
   font-size: 16px;
   color: #444;
+  line-height: 1.5;
+  margin-bottom: 20px;
 }
 
-/* Buttons */
+/* ACTION BUTTONS */
 .cta-buttons {
   display: flex;
   gap: 15px;
-  margin-top: 20px;
+  margin-top: 10px;
 }
 
 .donate-btn,
-.volunteer-btn {
+.volunteer-btn,
+.feedback-btn {
   padding: 12px 20px;
-  border-radius: 8px;
   border: none;
+  border-radius: 8px;
   color: white;
-  cursor: pointer;
   font-size: 15px;
+  cursor: pointer;
+  transition: 0.2s ease;
 }
 
 .donate-btn {
-  background-color: #28a745; /* green */
+  background-color: #28a745;
 }
 
 .volunteer-btn {
-  background-color: #ff9800; /* orange */
+  background-color: #ff9800;
+}
+
+.feedback-btn {
+  background-color: #0077ff;
 }
 
 .donate-btn:hover {
@@ -67,28 +80,67 @@
   background-color: #e68600;
 }
 
-/* Map */
-.cause-map-section {
-  margin-top: 30px;
+.feedback-btn:hover {
+  background-color: #0063d1;
 }
 
-.leaflet-container {
-  width: 100%;
-  height: 300px;
-  border-radius: 10px;
-  margin-top: 10px;
-}
-
-/* Details Sections */
-.details-section {
-  margin-top: 30px;
+/* FORMS */
+.cause-form {
+  margin-top: 20px;
   padding: 15px;
-  background: #fafafa;
+  background: #f8f8f8;
   border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.05);
+}
+
+.cause-form label {
+  font-size: 15px;
+  font-weight: 500;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.cause-form input,
+.cause-form textarea {
+  padding: 10px;
+  border: 1.4px solid #ccc;
+  border-radius: 6px;
+  font-size: 15px;
+}
+
+.cause-form button {
+  padding: 12px;
+  border: none;
+  background: #222;
+  color: white;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 15px;
+  margin-top: 5px;
+  transition: 0.2s ease;
+}
+
+.cause-form button:hover {
+  background: #000;
+}
+
+/* DETAILS SECTIONS */
+.details-section {
+  margin-top: 28px;
+  padding: 18px;
+  background: #fafafa;
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.06);
 }
 
 .details-section h2 {
   margin-bottom: 10px;
+  font-size: 20px;
+  font-weight: 600;
 }
 
 .details-section ul {
@@ -96,6 +148,26 @@
 }
 
 .details-section li {
-  margin-bottom: 5px;
+  margin-bottom: 6px;
   color: #555;
+  font-size: 15px;
+}
+
+/* MAP SECTION */
+.cause-map-section {
+  margin-top: 35px;
+}
+
+.cause-map-section h2 {
+  margin-bottom: 10px;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.leaflet-container {
+  width: 100%;
+  height: 400px !important;
+  border-radius: 10px;
+  margin-top: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }

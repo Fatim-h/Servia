@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import './LoginPage.css'; // import the new CSS file
+import { setCurrentUser } from '../services/authStore';
+import api from '../services/api';
 
 const LoginPage = () => {
   const [name, setName] = useState('');
@@ -13,6 +15,10 @@ const LoginPage = () => {
     e.preventDefault();
     console.log("Submitting login...");
     const success = await login({ name, password });
+    const res = await api.post('/api/auth/login', { name, password });
+    const logged_user = res.data;
+    localStorage.setItem("logged_user", JSON.stringify(logged_user));
+    console.log("Logged in user:", logged_user);
     console.log("Login result:", success);
     if (success) {
       navigate('/'); // redirect after successful login

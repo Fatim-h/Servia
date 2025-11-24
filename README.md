@@ -6,7 +6,7 @@ A centralized online platform that showcases and organizes NGOs and foundations 
 
 - **User Roles:**
   - **Admin:** Manage users, causes, and content.
-  - **Cause:** Add and manage cause details, events, locations, donations, and volunteers.
+  - **NGO\Event:** Add and manage cause details, events, locations, donations, and volunteers.
   - **Visitor:** Browse causes, view NGO information, and explore events.
   
 - **Authentication:** Secure login and password hashing with `Flask-Login` and `Werkzeug`.
@@ -14,6 +14,8 @@ A centralized online platform that showcases and organizes NGOs and foundations 
 - **Causes:** Detailed cause information with social links, contact info, feedback, donations, and volunteer opportunities.
 
 - **NGOs:** NGOs can create events associated with causes and specify locations.
+
+- **Events:** Can be linked to NGOs and specify locations.
 
 - **Locations:** Linked to NGOs and Events and   stored the map needed info.
 
@@ -89,14 +91,22 @@ A centralized online platform that showcases and organizes NGOs and foundations 
 ├─server.py
 ├─ backend/
 │ ├─ init.py
+│ ├─ config.py
 │ ├─ models.py
 │ ├─ routes.py
 │ └─ requirements.txt
 └─ frontend/
-├─ package.json
-├─ src/
-├─ pages/
-│ └─ UserPage.js
+| ├─ package.json
+| ├─ package-lock.json
+| ├─src/
+| | ├─ pages/
+│ | |  ├─HomePage.js
+│ | |  ├─CausePage.js
+│ | |  ├─UserPage.js
+│ | |  ├─LoginPage.js
+│ | |  ├─SignPage.js
+│ | |  ├─AdminDashboard.js
+| | |  └─ ...css
 ├─ components/
 │ └─ Header.js
 ├─ services/
