@@ -328,6 +328,20 @@ def get_cause(cause_id):
 
     subtype = "NGO" if cause.ngo else "Event" if cause.event else "Unknown"
 
+    # ---------- FEEDBACK WITH USERNAME ----------
+    feedback_list = Feedback.query.filter_by(cause_id=cause_id).all()
+
+    feedback_json = []
+    for fb in feedback_list:
+        user = User.query.get(fb.user_id)  # get the user
+        feedback_json.append({
+            "feedback_id": fb.feedback_id,
+            "rating": fb.rating,
+            "comment": fb.comment,
+            "username": user.username if user else "Unknown"
+        })
+
+    # ---------- BASE CAUSE DATA ----------
     cause_data = {
         "cause_id": cause.cause_id,
         "name": cause.name,
@@ -337,6 +351,8 @@ def get_cause(cause_id):
         "email": cause.email,
         "if_online": cause.if_online,
         "verified": cause.verified,
+
+        # Locations
         "locations": [{
             "loc_id": loc.loc_id,
             "country": loc.country,
@@ -346,12 +362,23 @@ def get_cause(cause_id):
             "longitude": loc.longitude,
             "contact_no": loc.contact_no
         } for loc in cause.locations] or [],
+
+        # Contacts + socials
         "contacts": [c.contact for c in cause.contacts],
-        "socials": [s.social for s in cause.socials]
+        "socials": [s.social for s in cause.socials],
+
+        # ADD FEEDBACK HERE
+        "feedback": feedback_json
     }
 
+    # ---------- NGO DETAILS ----------
     if subtype == "NGO" and cause.ngo:
-        cause_data.update({"year_est": cause.ngo.year_est, "age": cause.ngo.age})
+        cause_data.update({
+            "year_est": cause.ngo.year_est,
+            "age": cause.ngo.age
+        })
+
+    # ---------- EVENT DETAILS ----------
     elif subtype == "Event" and cause.event:
         cause_data.update({
             "capacity": cause.event.capacity,
@@ -400,95 +427,6 @@ def admin_get_user_causes(user_id):
             "verified": c.verified
         })
     return jsonify({"causes": result})
-
-
-# ------------------------------------------------------------
-# DASHBOARD DATA FETCHING
-# ------------------------------------------------------------
-@main.route("/api/user/dashboard/data", methods=["POST"])
-def dashboard_data():
-    data = request.get_json()
-    auth_id = data.get("auth_id")
-    if not auth_id:
-        return jsonify({"error": "Auth ID missing"}), 400
-
-    auth = AuthData.query.get(auth_id)
-    if not auth or auth.role != "user":
-        return jsonify({"error": "User not found"}), 404
-
-    user = User.query.get(auth.fk_id)
-    if not user:
-        return jsonify({"error": "User not found"}), 404
-
-    # --- same as before ---
-    causes = Cause.query.filter_by(user_id=user.user_id).all()
-    donations = db.session.query(Donation, Cause.name.label("cause_name")) \
-        .join(Cause, Donation.cause_id == Cause.cause_id) \
-        .filter(Donation.user_id == user.user_id).all()
-    feedbacks = db.session.query(Feedback, Cause.name.label("cause_name")) \
-        .join(Cause, Feedback.cause_id == Cause.cause_id) \
-        .filter(Feedback.user_id == user.user_id).all()
-    volunteers = db.session.query(Volunteer, Cause.name.label("cause_name")) \
-        .join(Cause, Volunteer.cause_id == Cause.cause_id) \
-        .filter(Volunteer.user_id == user.user_id).all()
-
-    return jsonify({
-        "user": {
-            "user_id": user.user_id,
-            "name": user.name,
-            "email": user.email,
-            "age": user.age,
-            "verified": user.verified
-        },
-        "causes": [{"cause_id": c.cause_id, "name": c.name, "type": "NGO" if c.ngo else "Event" if c.event else "Unknown", "verified": c.verified} for c in causes],
-        "donations": [{"donation_id": d[0].donation_id, "amount": d[0].amount, "cause_id": d[0].cause_id, "cause_name": d[1], "date": d[0].date.strftime("%Y-%m-%d") if d[0].date else None} for d in donations],
-        "feedbacks": [{"feedback_id": f[0].feedback_id, "cause_id": f[0].cause_id, "cause_name": f[1], "comment": f[0].comment, "rating": f[0].rating, "date": f[0].date.strftime("%Y-%m-%d") if f[0].date else None} for f in feedbacks],
-        "volunteers": [{"volunteer_id": v[0].volunteer_id, "cause_id": v[0].cause_id, "cause_name": v[1], "hours": v[0].hours, "date": v[0].date.strftime("%Y-%m-%d") if v[0].date else None} for v in volunteers]
-    })
-
-#----update user-----
-@main.route("/api/user/<int:user_id>", methods=["PATCH"])
-def update_user(user_id):
-    data = request.get_json()
-    logged_user = data.get("logged_user")  # <- frontend sends this
-    if not logged_user or logged_user.get("role") != "user":
-        return jsonify({"error": "Not logged in"}), 401
-
-    user = User.query.get(user_id)
-    if not user:
-        return jsonify({"error": "User not found"}), 404
-
-    # Only allow updating own profile
-    if user.user_id != logged_user.get("fk_id"):
-        return jsonify({"error": "Unauthorized"}), 403
-
-    # Update allowed fields
-    for field in ["name", "email", "age"]:
-        if field in data:
-            setattr(user, field, data[field])
-
-    db.session.commit()
-    return jsonify({"message": "User updated successfully"})
-
-# Delete Cause(from UserDashboard)
-@main.route("/api/user/cause/<int:cause_id>", methods=["DELETE"])
-def delete_cause(cause_id):
-    data = request.get_json()
-    logged_user = data.get("logged_user")
-    if not logged_user or logged_user.get("role") != "user":
-        return jsonify({"error": "Not logged in"}), 401
-
-    cause = Cause.query.get(cause_id)
-    if not cause:
-        return jsonify({"error": "Cause not found"}), 404
-
-    # Only allow deleting if the cause belongs to the logged-in user
-    if cause.user_id != logged_user.get("fk_id"):
-        return jsonify({"error": "Unauthorized"}), 403
-
-    db.session.delete(cause)
-    db.session.commit()
-    return jsonify({"message": "Cause deleted successfully"})
 
 # Delete Feedback/donation/volunteer 
 @main.route("/api/user/<string:type>/<int:item_id>", methods=["DELETE"])

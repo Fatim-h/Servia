@@ -221,6 +221,8 @@ export default function CausePage() {
             </MapContainer>
           ) : <p>No location listed.</p>}
         </div>
+
+        
       </div>
     </>
   );
