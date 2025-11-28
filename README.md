@@ -85,7 +85,7 @@ A centralized online platform that showcases and organizes NGOs and foundations 
    ```bash
    npm start
 
-## Project Direct0ry Structure
+## Project Directory Structure
    ```
    Servia/
 ├─server.py
