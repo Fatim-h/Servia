@@ -165,12 +165,12 @@ const AdminDashboard = () => {
               </td>
               <td>{c.verified ? 'Yes' : 'No'}</td>
               <td>
-                <button
-                  className="btn"
-                  onClick={() => toggleVerifyCause(c.auth_id, c.verified)}
-                >
-                  {c.verified ? 'Unverify' : 'Verify'}
-                </button>
+                {c.verified ? (
+                    <span style={{color: "green"}}>Verified</span>
+                  ) : (
+                    <span style={{color: "red"}}>Unverified</span>
+                  )}
+
                 <button className="btn btn-delete" onClick={() => handleDeleteCause(c.cause_id)}>Delete</button>
               </td>
             </tr>

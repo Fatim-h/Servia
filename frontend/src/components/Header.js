@@ -15,10 +15,7 @@ const Header = () => {
         navigate('/admindashboard');
         break;
       case 'user':
-      navigate(`/admin/user/${auth.auth_id}`); 
-        break;
-      case 'cause':
-        navigate(`/admin/cause/${c.cause_id}`);
+      navigate(`/admin/auth/${auth.auth_id}`); 
         break;
       default:
         break;

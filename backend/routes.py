@@ -86,7 +86,7 @@ def register():
         if_online=data.get("if_online", False),
         logo=data.get("logo"),
         user_id=owner_user_id,
-        verified=False
+        verified=True
     )
     db.session.add(cause)
     db.session.commit()
@@ -108,7 +108,7 @@ def register():
         db.session.add(event)
         db.session.commit()
 
-    return jsonify({"message": f"{role.capitalize()} created, awaiting admin verification.", "cause_id": cause.cause_id}), 201
+    return jsonify({"message": f"{role.capitalize()} created", "cause_id": cause.cause_id}), 201
 
 # -------------------- LOGIN --------------------
 @main.route("/api/auth/login", methods=["POST"])
@@ -186,7 +186,6 @@ def admin_get_causes():
 
 # -------------------- VERIFY / UNVERIFY --------------------
 @main.route("/api/admin/verify/<int:auth_id>", methods=["PATCH"])
-@main.route("/api/admin/verify/cause/<int:auth_id>", methods=["PATCH"])
 def admin_verify(auth_id):
     auth = AuthData.query.get(auth_id)
     if not auth:
@@ -211,7 +210,6 @@ def admin_verify(auth_id):
 
 
 @main.route("/api/admin/unverify/<int:auth_id>", methods=["PATCH"])
-@main.route("/api/admin/unverify/cause/<int:auth_id>", methods=["PATCH"])
 def admin_unverify(auth_id):
     auth = AuthData.query.get(auth_id)
     if not auth:
@@ -428,38 +426,6 @@ def admin_get_user_causes(user_id):
         })
     return jsonify({"causes": result})
 
-# Delete Feedback/donation/volunteer 
-@main.route("/api/user/<string:type>/<int:item_id>", methods=["DELETE"])
-def delete_item(type, item_id):
-    data = request.get_json()
-    logged_user = data.get("logged_user")
-    if not logged_user or logged_user.get("role") != "user":
-        return jsonify({"error": "Not logged in"}), 401
-
-    fk_id = logged_user.get("fk_id")
-
-    model_map = {
-        "donation": Donation,
-        "feedback": Feedback,
-        "volunteer": Volunteer
-    }
-
-    Model = model_map.get(type)
-    if not Model:
-        return jsonify({"error": "Invalid type"}), 400
-
-    item = Model.query.get(item_id)
-    if not item:
-        return jsonify({"error": f"{type.capitalize()} not found"}), 404
-
-    # Ensure the item belongs to the logged-in user
-    if item.user_id != fk_id:
-        return jsonify({"error": "Unauthorized"}), 403
-
-    db.session.delete(item)
-    db.session.commit()
-    return jsonify({"message": f"{type.capitalize()} deleted successfully"})
-
 # -------------------------
 # Get cause info
 # -------------------------
@@ -578,3 +544,16 @@ def feedback_cause(cause_id):
     db.session.commit()
 
     return jsonify({"message": "Feedback submitted successfully."}), 200
+
+@main.route("/api/admin/auth/<int:auth_id>", methods=["GET"])
+@require_admin
+def admin_get_user_by_auth(auth_id):
+    auth = AuthData.query.get(auth_id)
+    if not auth or auth.role != "user":
+        return jsonify({"error": "Not found"}), 404
+    
+    user = User.query.get(auth.fk_id)
+    return jsonify({
+        "auth_id": auth_id,
+        "user_id": user.user_id
+    })

@@ -112,6 +112,7 @@ A centralized online platform that showcases and organizes NGOs and foundations 
 ├─ services/
 │ └─ api.js
 │ └─ authServices.js
+├─ .env    #for postgresql
 ├─ App.js
 ├─ index.js
 └─ server.py
