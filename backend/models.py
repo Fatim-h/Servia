@@ -3,7 +3,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 
 # ============================
-#          AUTH
+#          AUTHENTICATION
 # ============================
 class AuthData(db.Model):
     __tablename__ = 'auth_data'
